@@ -17,15 +17,15 @@
 	.equ max_msg_cripto,255			@ Define o tamanho maximo para mensagem criptografada
 	
 _start:
-	
+
+@------------------------------------INICIO CRIPTOGRAFIA---------------------------------------
 	@Escreve a mensagem inicial pedindo para digitar a chave
-	mov     r0, #1      		@ stdout
+	mov     r0, #1      		@ Comando de saida
 	ldr     r1, =msg    		@ Endereco da mensagem
 	ldr     r2, =len    		@ Tamanho mensagem a ser escrita
 	mov     r7, #4
 	svc     0x055
-	
-@------------------------------------LEITURA CHAVE---------------------------------------------
+
 	@ Leitura inicial da chave *
 leitura_inicial:
 	ldr		r3, =kdb_status
@@ -37,9 +37,15 @@ leitura_inicial:
 
 	@ Comparar se precionou '*' para iniciar a chave
 	cmp		r4, #10					@ Comprar se foi digitado o *
-	bne		leitura_inicial			@ Se diferente de * volta para leitura
-	b		escrever				@ Se * vai para escrever
+	bne		leitura_inicial			@ Se diferente de * volta para leitura_inicial
+	mov    	r0, #1  				@ Comando de saida
+	mov    	r1,	#10			 		@ Define a mensagem como *
+	mov    	r2, #1					@ Define tamanho mensagem a ser escrita como 1
+	mov    	r7, #4
+	svc    	#0x55
+	b		leitura_kdb_chave		@ Apos precionado * continua leitura da chave
 
+@------------------------------------LEITURA CHAVE -------------------------------------------	
 	@ Apos digitado * leitura da chave
 leitura_kdb_chave:
 	ldr		r3, =kdb_status
@@ -54,65 +60,62 @@ leitura_kdb_chave:
 
 	@ Exibe um asterisco na tela
 escrever:
-	mov    	r0, #1  				@ stdout
+	mov    	r0, #1  				@ Comando de saida
 	mov    	r1,	#10			 		@ Define a mensagem como *
 	mov    	r2, #1					@ Define tamanho mensagem a ser escrita como 1
 	mov    	r7, #4
 	svc    	#0x55
 	
 	@ Compara se precionou '#' para encerar a chave
-	cmp		r4, #11					@ compara se foi '#' 
-	bne		guardar_chave			@ se for diferente salva e le outro valor
-	b 		leitura_mensagem		@ se nao vai para descriptografia
-	
+	cmp		r4, #11					@ Compara se foi '#' 
+	bne		guardar_chave			@ Se for diferente salva e le outro valor
+	b 		leitura_mensagem		@ Se nao vai para leitura_mensagem
+
+@------------------------------------ARMAZENANDO A CHAVE-----------------------------------------	
 @ Guarda a chave na memoria	
 guardar_chave:
-
 	ldr 	r10, =chave				@ coloca endereco em R10
 	strb	r4, [r10, r5]			@ Armazena o valor
 	add 	r5, r5, #1				@ Deslocamento
 	mov 	r4, #0					@ Limpa registrador
-	
 	b		leitura_kdb_chave		@ Retorna a leitura da chave
 	
 @------------------------------------LEITURA MENSAGEM---------------------------------------------	
 leitura_mensagem:
 	
 	@Escreve a mensagem pedindo para digitar a mensagem
-	mov     r0, #1      		@ fd -> stdout
-	ldr     r1, =msg2   		@ buf -> msg2
-	ldr     r2, =len2   		@ count -> len2(msg2)
-	mov     r7, #4      		@ write é syscall #4
-	svc     0x055       		@ executa syscall 
+	mov     r0, #1      		@ Comando de saida
+	ldr     r1, =msg2    		@ Endereco da mensagem
+	ldr     r2, =len2    		@ Tamanho mensagem a ser escrita
+	mov     r7, #4
+	svc     0x055
 
 	@Faz a leitura da mensagem digitada pelo usuario
-	mov     r0, #0      		@ fd -> stdin
-	ldr     r1, =mensagem 		@ buf -> buffer
-	ldr     r2, =max_chave		@ count -> max_msg
-	mov     r7, #3      		@ write é syscall #3
-	svc     #0x55       		@ executa syscall 
-	mov		r2, r0      		@ número de bytes a serem lidos
-
+	mov     r0, #0      		@ Comando de entrada
+	ldr     r1, =mensagem    	@ Endereco da mensagem
+	ldr     r2, =max_msg 		@ Tamanho maxio a ser lido
+	mov     r7, #3
+	svc     #0x55
+	
 @------------------------------------CRIPTOGRAFIA-------------------------------------------------
 criptografia:
 	@Escreve a mensagem criptografada
-	mov     r0, #1
-	ldr     r1, =mensagem   	@ buf -> msg3
-	ldr     r2, =len3   		@ count -> len3(msg3)
-	mov     r7, #4      		@ write é syscall #4
-	svc     0x055       		@ executa syscall
+	mov     r0, #1   				@MODO ESCRITA (STDOUT)   	
+	ldr     r1, =mensagem 			@ENDEREÇO INICIAL DA ESCRITA
+	ldr     r2, =max_msg		 	@TAMANHO DA DOS DADOS A SEREM ESCRITOS
+	mov     r7, #4					@R7 DEVE SER 4 POR ORIENTAÇÃO DO DESENVOLVEDOR      	
+	svc     #0x55
 
-@------------------------------------INICIO DESCRIPTOGRAFIA-----------------------------------------------
+@------------------------------------INICIO DESCRIPTOGRAFIA-----------------------------------------
 
 	@Escreve a mensagem pedindo a chave de descriptografia
-	mov     r0, #1      		@ fd -> stdout
-	ldr     r1, =msg3   		@ buf -> msg3
-	ldr     r2, =len3   		@ count -> len3(msg3)
-	mov     r7, #4      		@ write é syscall #4
-	svc     0x055       		@ executa syscall 
+	mov     r0, #1      		@ Comando de entrada
+	ldr     r1, =msg3    		@ Endereco da mensagem
+	ldr     r2, =len3	 		@ Tamanho maxio a ser lido
+	mov     r7, #4
+	svc     #0x55
 	
-@------------------------------------LEITURA CHAVE DESCRIPTOGRAFIA---------------------------------
-		@ Leitura inicial da chave *
+	@ Leitura inicial da chave *
 leitura_desc:
 	ldr		r3, =kdb_status
 	ldr		r4, [r3]				@ Carrega no R4 o valor de R3
@@ -124,8 +127,14 @@ leitura_desc:
 	@ Comparar se precionou '*' para iniciar a chave
 	cmp		r4, #10					@ Comprar se foi digitado o *
 	bne		leitura_desc			@ Se diferente de * volta para leitura
-	b		escrever2				@ Se * vai para escrever
+	mov    	r0, #1  				@ Comando de saida
+	mov    	r1,	#10			 		@ Define a mensagem como *
+	mov    	r2, #1					@ Define tamanho mensagem a ser escrita como 1
+	mov    	r7, #4
+	svc    	#0x55
+	b		leitura_kdb_desc		@ Apos precionado * continua leitura da chave
 	
+@------------------------------------LEITURA CHAVE DESCRIPTOGRAFIA---------------------------------	
 	@ Apos digitado * leitura da chave
 leitura_kdb_desc:
 	ldr		r3, =kdb_status
@@ -140,17 +149,18 @@ leitura_kdb_desc:
 
 	@ Exibe um asterisco na tela
 escrever2:
-	mov    	r0, #1  				@ stdout
+	mov    	r0, #1  				@ Comando de saida
 	mov    	r1,	#10			 		@ Define a mensagem como *
 	mov    	r2, #1					@ Define tamanho mensagem a ser escrita como 1
 	mov    	r7, #4
 	svc    	#0x55
 	
 	@ Compara se precionou '#' para encerar a chave
-	cmp		r4, #11					@ compara se foi '#' 
-	bne		guardar_desc			@ se for diferente salva e le outro valor
-	b 		descriptografia		@ se nao vai para descriptografia
+	cmp		r4, #11					@ Compara se foi '#' 
+	bne		guardar_desc			@ Se for diferente salva e le outro valor
+	b 		descriptografia			@ Se nao vai para descriptografia
 	
+@------------------------------------ARMAZENANDO A CHAVE DESCRIPTOGRAFIA-------------------------
 @ Guarda a chave na memoria	
 guardar_desc:
 
@@ -158,11 +168,15 @@ guardar_desc:
 	strb	r4, [r10, r5]			@ Armazena o valor
 	add 	r5, r5, #1				@ Deslocamento
 	mov 	r4, #0					@ Limpa registrador
-	
 	b		leitura_kdb_desc		@ Retorna a leitura da chave
 	
 @------------------------------------DESCRIPTOGRAFIA-----------------------------------------------
 descriptografia:
+	mov     r0, #1
+	ldr     r1, =mensagem   	@ buf -> msg3
+	ldr     r2, =max_msg   		@ count -> len3(msg3)
+	mov     r7, #4      		@ write é syscall #4
+	svc     0x055       		@ executa syscall
 	
 final:	
 	mov     r0, #0
@@ -183,7 +197,7 @@ msg_cripto:
 @Mensagem que serao apresentadas ao usuario
 msg:		.ascii   "Digite a chave para criar a criptografia \n-no teclado numerico\n"
 len = . - msg
-msg2:		.ascii   "\nDigite a mensagem a ser criptografada\n"
+msg2:		.ascii   "\nDigite a mensagem a ser criptografada\n\n"
 len2 = . - msg2
-msg3:		.ascii   "Digite a chave para descriptografar \n-no teclado numerico\n"
+msg3:		.ascii   "\nDigite a chave para descriptografar \n-no teclado numerico\n"
 len3 = . - msg3
