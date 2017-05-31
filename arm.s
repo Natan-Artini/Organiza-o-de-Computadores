@@ -14,7 +14,7 @@ _start:
 
 @------------------------------------INICIO CRIPTOGRAFIA---------------------------------------
 	@Escreve a mensagem inicial pedindo para digitar a chave
-	mov     r0, #1      			@ Comando de saida
+	mov     r0, #1					@ Comando de saida
 	ldr     r1, =msg    			@ Endereco da mensagem
 	ldr     r2, =len    			@ Tamanho mensagem a ser escrita
 	mov     r7, #4
@@ -36,7 +36,7 @@ leitura_inicial:
 	mov    	r1,	#10			 		@ Define a mensagem como *
 	mov    	r2, #1					@ Define tamanho mensagem a ser escrita como 1
 	mov    	r7, #4
-	svc    	#0x55
+	svc    	#0x055
 
 @------------------------------------LEITURA CHAVE -------------------------------------------	
 	@ Apos digitado * leitura da chave
@@ -59,7 +59,7 @@ escrever:
 	mov    	r1,	#10			 		@ Define a mensagem como *
 	mov    	r2, #1					@ Define tamanho mensagem a ser escrita como 1
 	mov    	r7, #4
-	svc    	#0x55
+	svc    	0x055
 	
 	@ Compara se precionou '#' para encerar a chave
 	cmp		r4, #11					@ Compara se foi '#'
@@ -124,7 +124,7 @@ escreve_cripto:
 	ldr     r1, =msg_cripto			@ Endereco da mensagem
 	ldr     r2, =max_msg			@ Tamanho da mensagem
 	mov     r7, #4     	
-	svc     #0x55
+	svc     0x55
 
 @------------------------------------INICIO DESCRIPTOGRAFIA-----------------------------------------
 
@@ -133,7 +133,7 @@ escreve_cripto:
 	ldr     r1, =msg3    			@ Endereco da mensagem
 	ldr     r2, =len3	 			@ Tamanho da mensagem
 	mov     r7, #4
-	svc     #0x55
+	svc     0x55
 	
 	@ Leitura inicial da chave *
 leitura_desc:
@@ -174,7 +174,7 @@ escrever2:
 	mov    	r1,	#10			 		@ Define a mensagem como *
 	mov    	r2, #1					@ Define tamanho mensagem a ser escrita como 1
 	mov    	r7, #4
-	svc    	#0x55
+	svc    	0x55
 	
 	@ Compara se precionou '#' para encerar a chave
 	cmp		r4, #11					@ Compara se foi '#' 
@@ -220,7 +220,7 @@ escreve_desc:
 	ldr     r1, =msg_desc			@ Endereco da mensagem
 	ldr     r2, =max_msg			@ Tamanho da mensagem
 	mov     r7, #4
-	svc     #0x55
+	svc     0x55
 	
 final:	
 	mov     r0, #0
@@ -241,7 +241,7 @@ msg_desc:
 	.skip max_msg			@ Mensagem descriptografada
 
 @Mensagem que serao apresentadas ao usuario
-msg:		.ascii   "Digite a chave para criar a criptografia \n-no teclado numerico\n"
+msg:		.ascii   "Digite a chave para a criptografia \n-no teclado numerico\n"
 len = . - msg
 msg2:		.ascii   "\nDigite a mensagem a ser criptografada\n\n"
 len2 = . - msg2
